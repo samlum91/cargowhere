@@ -10,6 +10,7 @@ interface NavbarProps {
   isRefreshing: boolean;
   lastUpdatedText: string;
   isLiveFeed: boolean;
+  feedSource?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -21,6 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isRefreshing,
   lastUpdatedText,
   isLiveFeed,
+  feedSource = 'Live Feed',
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md transition-colors">
@@ -35,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
           <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 pl-2 border-l border-slate-200 dark:border-slate-800">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-            <span>{isLiveFeed ? 'Data.gov.sg Live' : 'Simulated Feed'}</span>
+            <span>{isLiveFeed ? `${feedSource} Live` : 'Simulated Feed'}</span>
           </span>
         </div>
 

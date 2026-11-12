@@ -19,6 +19,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'explore' | 'finder' | 'favorites' | 'rates'>('explore');
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLiveFeed, setIsLiveFeed] = useState<boolean>(true);
+  const [feedSource, setFeedSource] = useState<string>('Data.gov.sg');
   const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
 
   // Dark Mode
@@ -68,6 +69,7 @@ export default function App() {
       const res = await CarparkService.fetchRealtimeCarparks();
       setCarparks(res.carparks);
       setIsLiveFeed(res.isLiveFeed);
+      setFeedSource(res.source || 'Data.gov.sg');
       setLastUpdated(res.timestamp);
 
       // Keep selected carpark fresh
@@ -136,6 +138,7 @@ export default function App() {
         isRefreshing={isRefreshing}
         lastUpdatedText={new Date(lastUpdated).toLocaleTimeString()}
         isLiveFeed={isLiveFeed}
+        feedSource={feedSource}
       />
 
       {/* Main Content Area */}

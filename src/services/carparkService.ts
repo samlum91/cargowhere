@@ -30,7 +30,53 @@ export class CarparkService {
     carparks: Carpark[];
     isLiveFeed: boolean;
     timestamp: string;
+    source: string;
   }> {
+    // 1. Try local serverless LTA DataMall proxy first
+    try {
+      const ltaResponse = await fetch('/api/carparkavailability');
+      if (ltaResponse.ok) {
+        const ltaData = await ltaResponse.json();
+        if (ltaData.success && ltaData.configured && Array.isArray(ltaData.value) && ltaData.value.length > 0) {
+          const ltaMap = new Map<string, any>();
+          for (const item of ltaData.value) {
+            // Index by Development, CarParkID, or partial match
+            ltaMap.set(String(item.CarParkID).toUpperCase(), item);
+            if (item.Development) {
+              ltaMap.set(String(item.Development).toLowerCase(), item);
+            }
+          }
+
+          const updated = this.cachedCarparks.map((cp) => {
+            const match = ltaMap.get(cp.code.toUpperCase()) || ltaMap.get(cp.name.toLowerCase());
+            if (match && typeof match.AvailableLots === 'number') {
+              return {
+                ...cp,
+                availableLots: {
+                  ...cp.availableLots,
+                  car: match.AvailableLots,
+                },
+                lastUpdated: ltaData.timestamp || new Date().toISOString(),
+                isRealtimeSynced: true,
+              };
+            }
+            return cp;
+          });
+
+          this.cachedCarparks = updated;
+          return {
+            carparks: updated,
+            isLiveFeed: true,
+            timestamp: ltaData.timestamp || new Date().toISOString(),
+            source: 'LTA DataMall',
+          };
+        }
+      }
+    } catch {
+      // /api/carparkavailability not reachable or returned non-configured, fallback to Data.gov.sg
+    }
+
+    // 2. Direct Government Data.gov.sg fallback
     try {
       const response = await fetch('https://api.data.gov.sg/v1/transport/carpark-availability', {
         headers: {
@@ -110,6 +156,7 @@ export class CarparkService {
         carparks: updatedCarparks,
         isLiveFeed: true,
         timestamp: apiTimestamp,
+        source: 'Data.gov.sg',
       };
     } catch (err) {
       console.warn('Real-time API fetch failed or rate-limited, falling back to simulated live feed:', err);
@@ -133,6 +180,7 @@ export class CarparkService {
         carparks: fallbackCarparks,
         isLiveFeed: false,
         timestamp: new Date().toISOString(),
+        source: 'Offline Fallback',
       };
     }
   }
